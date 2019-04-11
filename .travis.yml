@@ -50,13 +50,13 @@ install:
   - CURRENT_BRANCH="$BUCKET/$TRAVIS_BRANCH/webrecorder-$TRAVIS_OS_NAME"
   - DEVELOP_BRANCH="$BUCKET/wr-desktop/webrecorder-$TRAVIS_OS_NAME"
   - |
-    if curl -o /dev/null -s -I -f "$CURRENT_BRANCH"; then
-          echo "downloading webrecorder artifact: $CURRENT_BRANCH";
-          curl -o python-binaries/webrecorder $CURRENT_BRANCH;
-    else
-          echo "downloading webrecorder artifact: $DEVELOP_BRANCH";
-          curl -o python-binaries/webrecorder $DEVELOP_BRANCH;
-    fi
+    #if curl -o /dev/null -s -I -f "$CURRENT_BRANCH"; then
+    #      echo "downloading webrecorder artifact: $CURRENT_BRANCH";
+    #      curl -o python-binaries/webrecorder $CURRENT_BRANCH;
+    #else
+    echo "downloading webrecorder artifact: $DEVELOP_BRANCH";
+    curl -o python-binaries/webrecorder $DEVELOP_BRANCH;
+    #fi
   - chmod +x python-binaries/webrecorder
   - python-binaries/webrecorder -v
   - yarn install
@@ -68,9 +68,9 @@ after_failure:
 script:
   - |
     if [[ $TRAVIS_BRANCH == 'master' || $TRAVIS_BRANCH == 'wr-desktop' ]]; then
-      yarn run release-desktop
+      yarn run release
     else
-      yarn run dist-desktop
+      yarn run dist
     fi
   - mv ./dist/webrecorder-* $TRAVIS_BUILD_DIR/
 
