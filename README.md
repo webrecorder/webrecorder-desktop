@@ -37,7 +37,7 @@ yarn run start-dev
 
 
 ```
-yarn run dist-desktop
+yarn run dist
 ```
 
 

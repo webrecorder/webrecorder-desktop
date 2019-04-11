@@ -5,7 +5,9 @@ node_modules
 python-binaries/*
 dll
 app/static/
+app/yarn.lock
 plugins/
+dist/
 
 app/main.prod.js
 app/main.prod.js.map
