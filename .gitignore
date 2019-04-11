@@ -2,11 +2,10 @@
 *~
 
 node_modules
-python-binaries/*
+.env
 dll
 app/static/
 app/yarn.lock
-plugins/
 dist/
 
 app/main.prod.js
