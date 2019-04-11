@@ -11,12 +11,12 @@ matrix:
 
 env:
   global:
-    - ARTIFACTS_TARGET_PATHS="electron-player/$TRAVIS_BRANCH"
+    - ARTIFACTS_TARGET_PATHS="webrecorder-desktop/$TRAVIS_BRANCH"
 
 addons:
   artifacts:
     paths:
-      - $(ls webrecorder-player-*{dmg,AppImage})
+      - $(ls webrecorder-*{dmg,AppImage})
 
 before_install:
   - |
@@ -48,7 +48,7 @@ before_install:
 install:
   - BUCKET="https://s3.amazonaws.com/webrecorder-builds/webrecorder-player"
   - CURRENT_BRANCH="$BUCKET/$TRAVIS_BRANCH/webrecorder-$TRAVIS_OS_NAME"
-  - DEVELOP_BRANCH="$BUCKET/develop/webrecorder-$TRAVIS_OS_NAME"
+  - DEVELOP_BRANCH="$BUCKET/wr-desktop/webrecorder-$TRAVIS_OS_NAME"
   - |
     if curl -o /dev/null -s -I -f "$CURRENT_BRANCH"; then
           echo "downloading webrecorder artifact: $CURRENT_BRANCH";
