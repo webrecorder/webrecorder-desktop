@@ -1,0 +1,76 @@
+matrix:
+  include:
+    - os: linux
+      language: node_js
+      node_js:
+        - "10"
+    - os: osx
+      language: node_js
+      node_js:
+        - "10"
+
+env:
+  global:
+    - ARTIFACTS_TARGET_PATHS="electron-player/$TRAVIS_BRANCH"
+
+addons:
+  artifacts:
+    paths:
+      - $(ls webrecorder-player-*{dmg,AppImage})
+
+before_install:
+  - |
+    if [[ $TRAVIS_OS_NAME == 'linux' ]]; then
+      sed -i'' -E 's/"name": "(.*)"/"name": "\1-linux"/' ./package.json
+      apt-get -qq update; 
+      sudo apt-get install -y icnsutils graphicsmagick;
+      FLASH_PLUGIN="https://s3.amazonaws.com/webrecorder-builds/flashplugin/libpepflashplayer.so";
+      cd plugins; 
+      wget $FLASH_PLUGIN; 
+      cd -;
+    fi
+  - |
+    if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
+      sed -i '' -E 's/"name": "(.*)"/"name": "\1-osx"/' ./package.json
+      FLASH_PLUGIN="https://s3.amazonaws.com/webrecorder-builds/flashplugin/PepperFlashPlayer.plugin.zip";
+      REDIS_SERVER="https://s3.amazonaws.com/webrecorder-builds/redis/osx/redis-server";
+      cd plugins; 
+      wget $FLASH_PLUGIN; 
+      unzip PepperFlashPlayer.plugin.zip; 
+      rm PepperFlashPlayer.plugin.zip; 
+      cd -;
+      cd python-binaries;
+      wget $REDIS_SERVER;
+      chmod a+x ./redis-server;
+      cd -;
+     fi
+  
+install:
+  - BUCKET="https://s3.amazonaws.com/webrecorder-builds/webrecorder-player"
+  - CURRENT_BRANCH="$BUCKET/$TRAVIS_BRANCH/webrecorder-$TRAVIS_OS_NAME"
+  - DEVELOP_BRANCH="$BUCKET/develop/webrecorder-$TRAVIS_OS_NAME"
+  - |
+    if curl -o /dev/null -s -I -f "$CURRENT_BRANCH"; then
+          echo "downloading webrecorder artifact: $CURRENT_BRANCH";
+          curl -o python-binaries/webrecorder $CURRENT_BRANCH;
+    else
+          echo "downloading webrecorder artifact: $DEVELOP_BRANCH";
+          curl -o python-binaries/webrecorder $DEVELOP_BRANCH;
+    fi
+  - chmod +x python-binaries/webrecorder
+  - python-binaries/webrecorder -v
+  - yarn install
+  - yarn run build
+
+after_failure:
+  - cat ~/.npm/_logs/*.log
+
+script:
+  - |
+    if [[ $TRAVIS_BRANCH == 'master' || $TRAVIS_BRANCH == 'wr-desktop' ]]; then
+      yarn run release-desktop
+    else
+      yarn run dist-desktop
+    fi
+  - mv ./dist/webrecorder-* $TRAVIS_BUILD_DIR/
+

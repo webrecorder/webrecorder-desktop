@@ -1,0 +1,11 @@
+*.DS_Store
+*~
+
+node_modules
+python-binaries/*
+dll
+app/static/
+plugins/
+
+app/main.prod.js
+app/main.prod.js.map

@@ -1,0 +1,70 @@
+environment:
+  nodejs_version: "10"
+  matrix:
+    - platform: x32
+      ARCH_SUFFIX: '-x86'
+      ARCH_ARG: '--ia32'
+
+    - platform: x64
+      ARCH_SUFFIX: '-x86_64'
+      ARCH_ARG: '--x64'
+
+install:
+  - git submodule -q update --init
+  - ps: Install-Product node $env:nodejs_version
+  - yarn install
+
+  - ps: |
+        $replace_name = '"name": "$1' + "-win$env:ARCH_SUFFIX" + '"'
+        (Get-Content package.json) -replace '"name": "(.*)"', $replace_name | Set-Content package.json
+        (Get-Content .\app\package.json) -replace '"name": "(.*)"', $replace_name | Set-Content .\app\package.json
+        $bucket = "https://s3.amazonaws.com/webrecorder-builds/webrecorder-player"
+        $destination = "$env:APPVEYOR_BUILD_FOLDER\python-binaries\webrecorder.exe"
+        $current_branch = "$bucket/$env:APPVEYOR_REPO_BRANCH/webrecorder-win-$env:platform.exe"
+        $develop_branch = "$bucket/develop/webrecorder-win-$env:platform.exe"
+
+        $status = try { (invoke-webrequest -Uri $current_branch -Method Head).statuscode } catch {
+        $_.Exception.Response.StatusCode.Value__
+        }
+        
+        if ($status -eq "200") { 
+            Write-Host "downloading webrecorder artifact: $current_branch"
+            Invoke-WebRequest -Uri $current_branch -OutFile $destination
+
+        }
+        else {
+            Write-Host "downloading webrecorder artifact: $develop_branch"
+            Invoke-WebRequest -Uri $develop_branch -OutFile $destination
+        }
+  - ps: |
+        $flash_plugin = "https://s3.amazonaws.com/webrecorder-builds/flashplugin/pepflashplayer$env:ARCH_SUFFIX.dll"
+        Invoke-WebRequest -Uri $flash_plugin -OutFile "$env:APPVEYOR_BUILD_FOLDER\plugins\pepflashplayer.dll"
+  - ps: |
+        $redis_server = "https://s3.amazonaws.com/webrecorder-builds/redis/win-$env:platform/redis-server.exe"
+        Invoke-WebRequest -Uri $redis_server -OutFile "$env:APPVEYOR_BUILD_FOLDER\python-binaries\\redis-server.exe"
+  - ps: "& $destination '-v'"
+
+build_script:
+  - ps: |
+        if ($env:APPVEYOR_REPO_BRANCH -eq "master" -or $env:APPVEYOR_REPO_BRANCH -eq "wr-desktop") {
+          npm run release-desktop -- $env:ARCH_ARG
+        }
+        else {
+          npm run dist-desktop -- $env:ARCH_ARG
+        }
+  - ps: "move dist/webrecorder-*.* $env:APPVEYOR_BUILD_FOLDER/"
+
+test: off
+
+artifacts:
+  - path: "webrecorder-*.*"
+    name: webrecorder
+    
+deploy:
+  provider: S3
+  region: $(aws_s3_region)
+  bucket: $(aws_s3_bucket)
+  access_key_id: $(aws_access_key_id)
+  secret_access_key: $(aws_secret_access_key)
+  folder: electron-player/$(APPVEYOR_REPO_BRANCH)
+  artifact: webrecorder

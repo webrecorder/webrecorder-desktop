@@ -1,0 +1,125 @@
+{
+  "name": "webrecorder",
+  "version": "1.7.0",
+  "description": "Webrecorder -- Standalone Web Archive Browser App",
+  "scripts": {
+    "build": "concurrently \"npm run build-main\" \"npm run build-frontend\"",
+    "build-desktop": "concurrently \"npm run build-main\" \"node build-desktop.js\"",
+    "build-frontend": "node build-frontend.js",
+    "build-frontend-dev": "cd webrecorder/frontend && yarn install; yarn run build-player-dev",
+    "build-main": "cross-env NODE_ENV=production DEBUG_PROD=false node --trace-warnings -r babel-register ./node_modules/webpack/bin/webpack --config webpack/webpack.config.js --display-error-details --colors",
+    "start": "cross-env NODE_ENV=production electron ./app",
+    "start-dev": "cross-env NODE_ENV=development electron -r babel-register ./app/main.dev",
+    "pack": "build --dir",
+    "release": "npm run build && build",
+    "release-desktop": "npm run build-desktop && build --publish always",
+    "dist": "npm run build && build --publish never",
+    "dist-desktop": "npm run build-desktop && build --publish never"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/webrecorder/webrecorder-desktop.git"
+  },
+  "keywords": [
+    "warc",
+    "webarchives",
+    "electron",
+    "pywb",
+    "webrecorder"
+  ],
+  "author": "webrecorder/rhizome",
+  "license": "Apache",
+  "bugs": {
+    "url": "https://github.com/webrecorder/webrecorder-desktop/issues"
+  },
+  "homepage": "https://github.com/webrecorder/webrecorder-desktop#readme",
+  "build": {
+    "productName": "Webrecorder",
+    "asar": true,
+    "appId": "org.webrecorder.webrecorder",
+    "artifactName": "${name}-${version}.${ext}",
+    "files": [
+      "dist/",
+      "app.html",
+      "static/",
+      "main.prod.js",
+      "package.json"
+    ],
+    "extraResources": [
+      "python-binaries/",
+      "plugins",
+      "preload.js"
+    ],
+    "mac": {
+      "category": "public.app-category.utilities",
+      "target": "dmg"
+    },
+    "linux": {
+      "category": "Archiving;Utility;"
+    },
+    "win": {
+      "target": "portable"
+    },
+    "directories": {
+      "buildResources": "build",
+      "output": "dist"
+    },
+    "fileAssociations": [
+      {
+        "ext": "warc",
+        "name": "WARC File",
+        "description": "WARC File",
+        "role": "Viewer"
+      },
+      {
+        "ext": "warc.gz",
+        "name": "WARC File",
+        "description": "WARC File",
+        "role": "Viewer"
+      },
+      {
+        "ext": "arc",
+        "name": "ARC File",
+        "description": "ARC File",
+        "role": "Viewer"
+      },
+      {
+        "ext": "arc.gz",
+        "name": "ARC File",
+        "description": "ARC File",
+        "role": "Viewer"
+      },
+      {
+        "ext": "har",
+        "name": "HAR File",
+        "description": "HAR File",
+        "role": "Viewer"
+      }
+    ]
+  },
+  "dependencies": {
+    "babel-core": "^6.24.1",
+    "babel-loader": "^7.1.0",
+    "babel-preset-env": "^1.7.0",
+    "babel-preset-react": "^6.24.1",
+    "babel-preset-stage-0": "^6.24.1",
+    "babel-register": "^6.24.1",
+    "babili-webpack-plugin": "^0.1.2",
+    "concurrently": "^4.1.0",
+    "cross-env": "^5.2.0",
+    "dat-node": "^3.5.13",
+    "electron": "^4.1.3",
+    "electron-builder": "^20.38.1",
+    "electron-debug": "^2.0.0",
+    "electron-devtools-installer": "^2.2.4",
+    "electron-publisher-s3": "^20.17.2",
+    "electron-window-state": "^5.0.3",
+    "node-sass": "^4.10.0",
+    "webpack": "3.10.0"
+  },
+  "devEngines": {
+    "node": ">==8.12.0",
+    "npm": ">=4.x",
+    "yarn": ">=0.21.3"
+  }
+}
