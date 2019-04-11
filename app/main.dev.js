@@ -11,8 +11,10 @@
  */
 require('babel-polyfill');
 
-
 import { app, BrowserWindow, ipcMain, session, remote } from 'electron';
+
+import * as datShare from 'dat-share';
+
 import child_process from 'child_process';
 import Dat from 'dat-node';
 import fs from 'fs';
@@ -348,11 +350,25 @@ app.on('ready', async () => {
     createWindow();
     registerOpenWarc();
   } else {
+    const dataPath = path.join(app.getPath('downloads'), 'Webrecorder-Data', 'storage');
+
+    const datOpts = {
+      host: 'localhost',
+      port: 3000,
+      swarmManager: {
+        port: 3282,
+        rootDir: dataPath,
+      }
+    }
+
+    await datShare.initServer(datOpts);
+
     launchPythonApp(null, function(port, appUrl, source) {
       console.log("Python App Started: " + port);
 
       process.env.INTERNAL_HOST = "localhost";
       process.env.INTERNAL_PORT = port;
+      process.env.ALLOW_DAT = true;
 
       const proxy = `localhost:${port}`;
       const sesh = session.fromPartition('persist:wr', { cache: true });
