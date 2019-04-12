@@ -3,8 +3,8 @@
   "productName": "Webrecorder",
   "version": "1.7.0",
   "description": "Webrecorder Desktop -- Standalone Web Archive System",
-  "main": "./main.prod.js",
+  "main": "main.dev.bk.js",
   "scripts": {
-    "postinstall": "npm rebuild --runtime=electron --target=1.6.6 --disturl=https://atom.io/download/atom-shell --build-from-source"
+    "postinstall": "npm rebuild --runtime=electron --target=5.0.0-beta.8 --disturl=https://atom.io/download/atom-shell --build-from-source"
   }
 }

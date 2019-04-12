@@ -7,10 +7,10 @@
     "build-frontend-dev": "cd webrecorder/frontend && yarn install; yarn run build-player-dev",
     "build-main": "cross-env NODE_ENV=production DEBUG_PROD=false node --trace-warnings -r babel-register ./node_modules/webpack/bin/webpack --config webpack/webpack.config.js --display-error-details --colors",
     "start": "cross-env NODE_ENV=production electron ./app",
-    "start-dev": "cross-env NODE_ENV=development electron -r babel-register ./app/main.dev",
+    "start-dev": "cross-env NODE_ENV=development electron ./app/main.dev",
     "pack": "build --dir",
     "release": "npm run build && build",
-    "dist": "npm run build && build --publish never"
+    "dist": "yarn run build && build --publish never"
   },
   "repository": {
     "type": "git",
@@ -94,29 +94,33 @@
     ]
   },
   "dependencies": {
-    "babel-core": "^6.24.1",
-    "babel-loader": "^7.1.0",
+    "babel-core": "^6.26.3",
+    "babel-loader": "^8.0.5",
     "babel-preset-env": "^1.7.0",
     "babel-preset-react": "^6.24.1",
     "babel-preset-stage-0": "^6.24.1",
-    "babel-register": "^6.24.1",
+    "babel-register": "^6.26.0",
     "babili-webpack-plugin": "^0.1.2",
     "concurrently": "^4.1.0",
     "cross-env": "^5.2.0",
-    "dat-node": "^3.5.13",
+    "dat-node": "^3.5.15",
     "dat-share": "https://github.com/webrecorder/dat-share.git",
-    "electron": "^4.1.3",
-    "electron-builder": "^20.38.1",
-    "electron-debug": "^2.0.0",
+    "electron": "^5.0.0-beta.8",
+    "electron-builder": "^20.39.0",
+    "electron-debug": "^2.2.0",
     "electron-devtools-installer": "^2.2.4",
     "electron-publisher-s3": "^20.17.2",
     "electron-window-state": "^5.0.3",
-    "node-sass": "^4.10.0",
-    "webpack": "3.10.0"
+    "fs-extra": "^7.0.1",
+    "node-sass": "^4.11.0",
+    "webpack": "4.29.6"
   },
   "devEngines": {
     "node": ">==8.12.0",
     "npm": ">=4.x",
     "yarn": ">=0.21.3"
+  },
+  "devDependencies": {
+    "prettier": "^1.16.4"
   }
 }
