@@ -3,8 +3,13 @@
   "productName": "Webrecorder",
   "version": "1.7.0",
   "description": "Webrecorder Desktop -- Standalone Web Archive System",
-  "main": "main.dev.bk.js",
-  "scripts": {
-    "postinstall": "npm rebuild --runtime=electron --target=5.0.0-beta.8 --disturl=https://atom.io/download/atom-shell --build-from-source"
+  "main": "main.js",
+  "dependencies": {
+    "dat-node": "^3.5.15",
+    "dat-share": "https://github.com/webrecorder/dat-share.git",
+    "electron-debug": "^2.2.0",
+    "electron-devtools-installer": "^2.2.4",
+    "electron-window-state": "^5.0.3",
+    "fs-extra": "^7.0.1"
   }
 }

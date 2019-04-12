@@ -8,12 +8,12 @@ const options = {
   env: process.env
 };
 
-spawn('yarn install', [], options).on('exit', code => {
+spawn('npm install', [], options).on('exit', code => {
   if (code != 0) {
     return process.exit(code);
   }
 
-  spawn('yarn run build-desktop', [], options).on('exit', code2 => {
+  spawn('npm run build-desktop', [], options).on('exit', code2 => {
     return process.exit(code2);
   });
 });

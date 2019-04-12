@@ -2,29 +2,28 @@
  * Webpack config for production electron main process
  */
 
-import webpack from 'webpack';
-import path from 'path';
-import BabiliPlugin from 'babili-webpack-plugin';
+const webpack = require('webpack');
+const path = require('path');
+const projectDir = path.resolve(__dirname, '..');
 
-const projectDir = path.resolve(__dirname, '../');
-
-
-export default {
+module.exports = {
   target: 'electron-main',
-
-  entry: 'main.dev',
+  mode: 'production',
+  entry: path.join(projectDir, 'app', 'main.js'),
 
   module: {
-    rules: [{
-      test: /\.jsx?$/,
-      exclude: /node_modules/,
-      use: {
-        loader: 'babel-loader',
-        options: {
-          cacheDirectory: true
+    rules: [
+      {
+        test: /\.jsx?$/,
+        exclude: /node_modules/,
+        use: {
+          loader: 'babel-loader',
+          options: {
+            cacheDirectory: true
+          }
         }
       }
-    }]
+    ]
   },
 
   output: {
@@ -33,19 +32,10 @@ export default {
   },
 
   resolve: {
-    extensions: ['.js', '.jsx', '.json'],
-    modules: [
-      path.join(projectDir, 'app'),
-      'node_modules',
-    ],
+    extensions: ['.js', '.jsx', '.json']
   },
 
   plugins: [
-    /**
-     * Babli is an ES6+ aware minifier based on the Babel toolchain (beta)
-     */
-    new BabiliPlugin(),
-
     /**
      * Create global constants which can be configured at compile time.
      *
@@ -56,8 +46,12 @@ export default {
      * development checks
      */
     new webpack.DefinePlugin({
-      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production'),
-      'process.env.DEBUG_PROD': JSON.stringify(process.env.DEBUG_PROD || 'false')
+      'process.env.NODE_ENV': JSON.stringify(
+        process.env.NODE_ENV || 'production'
+      ),
+      'process.env.DEBUG_PROD': JSON.stringify(
+        process.env.DEBUG_PROD || 'false'
+      )
     })
   ],
 
@@ -69,5 +63,5 @@ export default {
   node: {
     __dirname: false,
     __filename: false
-  },
+  }
 };
