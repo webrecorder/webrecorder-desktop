@@ -7,7 +7,7 @@
     "build-frontend-dev": "cd webrecorder/frontend && yarn install; yarn run build-player-dev",
     "build-main": "NODE_ENV=production DEBUG_PROD=false node --trace-warnings ./node_modules/.bin/webpack --config ./webpack/webpack.config.js --display-error-details --colors",
     "start": "cross-env NODE_ENV=production electron ./app",
-    "start-dev": "cross-env NODE_ENV=development electron ./app/main.dev",
+    "start-dev": "cross-env NODE_ENV=development electron ./app/main.js",
     "pack": "build --dir",
     "release": "npm run build && build",
     "dist": "npm run build && build --publish never",

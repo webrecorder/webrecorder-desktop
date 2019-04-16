@@ -10,6 +10,8 @@
     "electron-debug": "^2.2.0",
     "electron-devtools-installer": "^2.2.4",
     "electron-window-state": "^5.0.3",
-    "fs-extra": "^7.0.1"
+    "fs-extra": "^7.0.1",
+    "process-nextick-args": "^2.0.0",
+    "readable-stream": "2.3.0"
   }
 }

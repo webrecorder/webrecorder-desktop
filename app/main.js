@@ -107,9 +107,8 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     webPreferences: {
       plugins: true,
+      webviewTag: true,
       nodeIntegration: true,
-      nodeIntegrationInSubFrames: true,
-      nodeIntegrationInWorker: true
     },
 
     // start with state from windowStateKeeper
