@@ -1,5 +1,10 @@
 # Webrecorder Desktop
 
+Prototype for Webrecorder Desktop Electron App.
+
+Follow instructions below to build locally. More info coming soon!
+
+
 ## Full Local Build
 
 1) Clone with submodules
@@ -40,6 +45,6 @@ yarn run start-dev
 yarn run dist
 ```
 
-
+6) If all goes well, the binary image should be placed in ``./dist/{mac,linux,win}`` directory, depending on your platform.
 
 
