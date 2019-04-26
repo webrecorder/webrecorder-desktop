@@ -46,12 +46,13 @@ install:
 
 build_script:
   - ps: |
-        if ($env:APPVEYOR_REPO_BRANCH -eq "master" -or $env:APPVEYOR_REPO_BRANCH -eq "wr-desktop") {
-          npm run release-desktop -- $env:ARCH_ARG
+        if ($env:APPVEYOR_REPO_BRANCH -eq "master" -or $env:APPVEYOR_REPO_BRANCH -eq "prerelease") {
+          $env:BUILD_CMD = "release"
         }
         else {
-          npm run dist-desktop -- $env:ARCH_ARG
+          $env:BUILD_CMD = "dist"
         }
+  - npm run %BUILD_CMD% -- %ARCH_ARG%
   - ps: "move dist/webrecorder-*.* $env:APPVEYOR_BUILD_FOLDER/"
 
 test: off
