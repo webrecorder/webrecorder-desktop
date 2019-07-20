@@ -4,13 +4,13 @@
   "description": "Webrecorder -- Standalone Web Archive Browser App",
   "scripts": {
     "build": "node build-desktop.js",
-    "build-frontend-dev": "cd webrecorder/frontend && yarn install; yarn run build-player-dev",
+    "build-frontend-dev": "cd webrecorder/frontend && yarn install; yarn run build-desktop-dev",
     "build-main": "NODE_ENV=production DEBUG_PROD=false node --trace-warnings ./node_modules/.bin/webpack --config ./webpack/webpack.config.js --display-error-details --colors",
     "start": "cross-env NODE_ENV=production electron ./app",
     "start-dev": "cross-env NODE_ENV=development electron ./app/main.js",
-    "pack": "build --dir",
-    "release": "npm run build && build",
-    "dist": "npm run build && build --publish never",
+    "pack": "electron-builder --dir",
+    "release": "npm run build && electron-builder",
+    "dist": "npm run build && electron-builder --publish never",
     "postinstall": "electron-builder install-app-deps"
   },
   "repository": {
@@ -53,7 +53,11 @@
       "target": "dmg"
     },
     "linux": {
-      "category": "Archiving;Utility;"
+      "category": "Archiving;Utility;",
+      "target": [
+        "AppImage",
+        "snap"
+      ]
     },
     "win": {
       "target": "portable"
@@ -98,12 +102,15 @@
   "dependencies": {
     "dat-node": "^3.5.15",
     "dat-share": "https://github.com/webrecorder/dat-share.git",
-    "electron": "^5.0.0-beta.8",
+    "electron": "5.0.7",
     "electron-debug": "^2.2.0",
     "electron-devtools-installer": "^2.2.4",
     "electron-publisher-s3": "^20.17.2",
     "electron-window-state": "^5.0.3",
-    "fs-extra": "^7.0.1"
+    "fs-extra": "^7.0.1",
+    "fstream": "^1.0.12",
+    "lodash": "^4.17.13",
+    "lodash.mergewith": "^4.6.2"
   },
   "devEngines": {
     "node": ">==8.12.0",
@@ -120,7 +127,7 @@
     "babili-webpack-plugin": "^0.1.2",
     "concurrently": "^4.1.0",
     "cross-env": "^5.2.0",
-    "electron-builder": "^20.39.0",
+    "electron-builder": "21.1.1",
     "node-sass": "^4.11.0",
     "prettier": "^1.16.4",
     "webpack": "4.29.6",

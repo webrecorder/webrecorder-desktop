@@ -5,6 +5,7 @@ const os = require('os');
 const datShare = require('dat-share');
 const windowStateKeeper = require('electron-window-state');
 const MenuBuilder = require('./menu');
+const packageInfo = require('./package');
 
 let debugOutput = [];
 let mainWindow = null;
@@ -18,6 +19,9 @@ const webrecorderBin = path.join(projectDir, 'python-binaries', 'webrecorder');
 const stdio = ['ignore', 'pipe', 'pipe'];
 const wrConfig = {};
 const pluginDir = 'plugins';
+
+const username = os.userInfo().username;
+
 
 switch (process.platform) {
   case 'win32':
@@ -151,7 +155,6 @@ function createWindow() {
 
 function starWebrecorder() {
   const dataPath = path.join(app.getPath('downloads'), 'Webrecorder-Data');
-  const username = os.userInfo().username;
   let cmdline = [
     '--no-browser',
     '--loglevel',
@@ -163,6 +166,8 @@ function starWebrecorder() {
     '--port',
     0
   ];
+
+  Object.assign(wrConfig, { dataPath });
 
   console.log(cmdline.toString());
 
@@ -242,6 +247,15 @@ app.on('ready', async () => {
     await installExtensions();
   }
 
+  cp.execFile(webrecorderBin, ['--version'], (err, stdout, stderr) => {
+    const electronVersion = `electron ${process.versions.electron}<BR>
+                             chrome ${process.versions.chrome}`;
+    Object.assign(wrConfig, {
+      version: `Webrecorder Desktop ${packageInfo.version}<BR>
+                ${stdout.replace(/\n/g, '<BR>')}<BR>${electronVersion}`
+    });
+  });
+
   const dataPath = path.join(
     app.getPath('downloads'),
     'Webrecorder-Data',
@@ -265,8 +279,8 @@ app.on('ready', async () => {
   process.env.INTERNAL_PORT = port;
   process.env.ALLOW_DAT = true;
 
+  const sesh = session.fromPartition(`persist:${username}-replay`, { cache: true });
   const proxy = `localhost:${port}`;
-  const sesh = session.fromPartition('persist:wr', { cache: true });
   sesh.setProxy({ proxyRules: proxy }, () => {
     createWindow();
   });
@@ -274,8 +288,32 @@ app.on('ready', async () => {
 
 
 // renderer process communication
+ipcMain.on('toggle-proxy', (evt, arg) => {
+  const sesh = session.fromPartition(`persist:${username}`, { cache: false });
+
+  let rules;
+
+  if (arg) {
+    rules = { proxyRules: `localhost:${process.env.INTERNAL_PORT}` };
+  } else {
+    rules = {};
+  }
+
+  sesh.setProxy(rules, () => {
+    console.log('proxy set:', rules);
+    evt.sender.send('toggle-proxy-done', {});
+  });
+});
+
 ipcMain.on('async-call', (evt, arg) => {
   evt.sender.send('async-response', {
     config: wrConfig,
     stdout: debugOutput.join('<BR>').replace(/\n/g, '<BR>')});
+});
+
+
+ipcMain.on('clear-cookies', () => {
+  // get current session
+  const sesh = session.fromPartition(`persist:${username}`);
+  sesh.clearStorageData({ storages: 'cookies' }, () => console.log('cookies cleared !'));
 });

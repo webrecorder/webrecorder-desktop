@@ -200,7 +200,6 @@ module.exports = class MenuBuilder {
 
     return [
       subMenuAbout,
-      subMenuFile,
       subMenuEdit,
       subMenuView,
       subMenuWindow,
