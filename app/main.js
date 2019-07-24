@@ -47,6 +47,10 @@ app.commandLine.appendSwitch(
   path.join(projectDir, pluginDir, pluginName)
 );
 app.commandLine.appendSwitch('enable-features', 'brotli-encoding');
+app.commandLine.appendSwitch('disable-renderer-backgrounding')
+app.commandLine.appendSwitch('disable-background-timer-throttling')
+app.commandLine.appendSwitch('disable-backgrounding-occluded-windows')
+
 
 function addToDebugOutput(rawBuff) {
   const buff = rawBuff.toString();
@@ -113,6 +117,7 @@ function createWindow() {
       plugins: true,
       webviewTag: true,
       nodeIntegration: true,
+      backgroundThrottling: false,
     },
 
     // start with state from windowStateKeeper
@@ -169,7 +174,7 @@ function starWebrecorder() {
 
   Object.assign(wrConfig, { dataPath });
 
-  console.log(cmdline.toString());
+  console.log(cmdline.join(' '));
 
   webrecorderProcess = cp.spawn(webrecorderBin, cmdline, spawnOptions);
 
