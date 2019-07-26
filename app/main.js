@@ -47,10 +47,10 @@ app.commandLine.appendSwitch(
   path.join(projectDir, pluginDir, pluginName)
 );
 app.commandLine.appendSwitch('enable-features', 'brotli-encoding');
-app.commandLine.appendSwitch('disable-renderer-backgrounding')
-app.commandLine.appendSwitch('disable-background-timer-throttling')
-app.commandLine.appendSwitch('disable-backgrounding-occluded-windows')
-
+app.commandLine.appendSwitch('disable-renderer-backgrounding');
+app.commandLine.appendSwitch('disable-background-timer-throttling');
+app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
+app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 
 function addToDebugOutput(rawBuff) {
   const buff = rawBuff.toString();
