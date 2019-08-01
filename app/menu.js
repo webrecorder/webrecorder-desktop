@@ -1,15 +1,18 @@
 const { app, ipcMain, Menu, shell, BrowserWindow } = require('electron');
+const cp = require('child_process');
 
 module.exports = class MenuBuilder {
   /**
    *
    * @param {BrowserWindow} mainWindow
    */
-  constructor(mainWindow) {
+  constructor(mainWindow, createWindowFunc) {
     /**
      * @type {BrowserWindow}
      */
     this.mainWindow = mainWindow;
+
+    this.createWindowFunc = createWindowFunc;
   }
 
   buildMenu() {
@@ -89,14 +92,17 @@ module.exports = class MenuBuilder {
       label: 'File',
       submenu: [
         {
-          label: 'Open...',
-          accelerator: 'Command+O',
+          label: 'New Webrecorder Window',
+          accelerator: 'Command+N',
           click: () => {
-            this.mainWindow.webContents.send('open-warc-dialog');
+            console.log('Launching: ' + process.argv.join(' '));
+            const newApp = cp.spawn(process.argv[0], process.argv.slice(1), {detached: true});
+            //this.createWindowFunc();
           }
-        }
+        },
       ]
     };
+
     const subMenuEdit = {
       label: 'Edit',
       submenu: [
@@ -174,7 +180,7 @@ module.exports = class MenuBuilder {
           selector: 'performMiniaturize:'
         },
         { type: 'separator' },
-        { label: 'Bring All to Front', selector: 'arrangeInFront:' }
+        { label: 'Bring All to Front', selector: 'arrangeInFront:' },
       ]
     };
     const subMenuHelp = {
@@ -200,6 +206,7 @@ module.exports = class MenuBuilder {
 
     return [
       subMenuAbout,
+      subMenuFile,
       subMenuEdit,
       subMenuView,
       subMenuWindow,
@@ -213,12 +220,13 @@ module.exports = class MenuBuilder {
         label: '&File',
         submenu: [
           {
-            label: 'Open',
-            accelerator: 'Ctrl+O',
+            label: 'New Webrecorder Window',
+            accelerator: 'Ctrl+N',
             click: () => {
-              this.mainWindow.webContents.send('open-warc-dialog');
+              console.log('Launching: ' + process.argv.join(' '));
+              const newApp = cp.spawn(process.argv[0], process.argv.slice(1), {detached: true});
             }
-          }
+          },
         ]
       },
       {

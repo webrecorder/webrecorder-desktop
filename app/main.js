@@ -8,11 +8,13 @@ const MenuBuilder = require('./menu');
 const packageInfo = require('./package');
 
 let debugOutput = [];
-let mainWindow = null;
 let pluginName;
 let port;
 let spawnOptions;
 let webrecorderProcess;
+
+let numWindows = 0;
+let proxyConfig = {};
 
 const projectDir = path.join(__dirname, '../');
 const webrecorderBin = path.join(projectDir, 'python-binaries', 'webrecorder');
@@ -112,7 +114,7 @@ function createWindow() {
     defaultHeight: 800
   });
 
-  mainWindow = new BrowserWindow({
+  const mainWindow = new BrowserWindow({
     webPreferences: {
       plugins: true,
       webviewTag: true,
@@ -138,13 +140,18 @@ function createWindow() {
   // show the window once its content is ready to go
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
+    numWindows++;
   });
 
   // load the application into the main window
   mainWindow.loadURL(`file://${__dirname}/app.html`);
 
   mainWindow.on('closed', () => {
-    mainWindow = null;
+    numWindows--;
+    if (numWindows > 0) {
+      console.log('more windows remain: ' + numWindows);
+      return;
+    }
     if (webrecorderProcess) {
       if (process.platform === 'win32') {
         cp.execSync(`taskkill /F /PID ${webrecorderProcess.pid} /T`);
@@ -154,12 +161,12 @@ function createWindow() {
     }
   });
 
-  const menuBuilder = new MenuBuilder(mainWindow);
+  const menuBuilder = new MenuBuilder(mainWindow, createWindow);
   menuBuilder.buildMenu();
 }
 
-function starWebrecorder() {
-  const dataPath = path.join(app.getPath('downloads'), 'Webrecorder-Data');
+function startWebrecorder() {
+  const dataPath = path.join(app.getPath('documents'), 'Webrecorder-Data');
   let cmdline = [
     '--no-browser',
     '--loglevel',
@@ -276,17 +283,26 @@ app.on('ready', async () => {
     }
   };
 
-  await datShare.initServer(datOpts);
-  await starWebrecorder();
+  try {
+    await datShare.initServer(datOpts);
+  } catch(e) {
+    console.log('Error Loading Dat Share -- Already running on same port?');
+  }
+
+  await startWebrecorder();
   console.log('Python App Started: ' + port);
 
   process.env.INTERNAL_HOST = 'localhost';
   process.env.INTERNAL_PORT = port;
   process.env.ALLOW_DAT = true;
 
-  const sesh = session.fromPartition(`persist:${username}-replay`, { cache: true });
-  const proxy = `localhost:${port}`;
-  sesh.setProxy({ proxyRules: proxy }, () => {
+  const seshReplay = session.fromPartition(`persist:${username}-replay`, { cache: true });
+
+  const seshLiveRecord = session.fromPartition(`persist:${username}`, { cache: false });
+
+  proxyConfig = { proxyRules: `localhost:${port}` };
+
+  seshReplay.setProxy(proxyConfig, () => {
     createWindow();
   });
 });
@@ -296,13 +312,7 @@ app.on('ready', async () => {
 ipcMain.on('toggle-proxy', (evt, arg) => {
   const sesh = session.fromPartition(`persist:${username}`, { cache: false });
 
-  let rules;
-
-  if (arg) {
-    rules = { proxyRules: `localhost:${process.env.INTERNAL_PORT}` };
-  } else {
-    rules = {};
-  }
+  const rules = arg ? proxyConfig : {};
 
   sesh.setProxy(rules, () => {
     console.log('proxy set:', rules);

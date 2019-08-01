@@ -21,7 +21,7 @@ install:
         $bucket = "https://s3.amazonaws.com/webrecorder-builds/webrecorder-player"
         $destination = "$env:APPVEYOR_BUILD_FOLDER\python-binaries\webrecorder.exe"
         $current_branch = "$bucket/$env:APPVEYOR_REPO_BRANCH/webrecorder-win-$env:platform.exe"
-        $develop_branch = "$bucket/wr-desktop/webrecorder-win-$env:platform.exe"
+        $develop_branch = "$bucket/master/webrecorder-win-$env:platform.exe"
 
         $status = try { (invoke-webrequest -Uri $current_branch -Method Head).statuscode } catch {
         $_.Exception.Response.StatusCode.Value__
@@ -46,7 +46,7 @@ install:
 
 build_script:
   - ps: |
-        if ($env:APPVEYOR_REPO_BRANCH -eq "master" -or $env:APPVEYOR_REPO_BRANCH -eq "prerelease") {
+        if ($env:APPVEYOR_REPO_BRANCH -eq "master" -or $env:APPVEYOR_REPO_BRANCH -eq "develop") {
           $env:BUILD_CMD = "release"
         }
         else {

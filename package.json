@@ -1,6 +1,6 @@
 {
   "name": "webrecorder",
-  "version": "1.7.0",
+  "version": "1.7.0-beta",
   "description": "Webrecorder -- Standalone Web Archive Browser App",
   "scripts": {
     "build": "node build-desktop.js",
@@ -41,12 +41,12 @@
       "static/",
       "main.js",
       "menu.js",
-      "package.json"
+      "package.json",
+      "preload.js"
     ],
     "extraResources": [
       "python-binaries/",
-      "plugins",
-      "preload.js"
+      "plugins"
     ],
     "mac": {
       "category": "public.app-category.utilities",
@@ -55,8 +55,7 @@
     "linux": {
       "category": "Archiving;Utility;",
       "target": [
-        "AppImage",
-        "snap"
+        "AppImage"
       ]
     },
     "win": {
@@ -102,7 +101,7 @@
   "dependencies": {
     "dat-node": "^3.5.15",
     "dat-share": "https://github.com/webrecorder/dat-share.git",
-    "electron": "5.0.7",
+    "electron": "6.0.0",
     "electron-debug": "^2.2.0",
     "electron-devtools-installer": "^2.2.4",
     "electron-publisher-s3": "^20.17.2",
@@ -127,7 +126,7 @@
     "babili-webpack-plugin": "^0.1.2",
     "concurrently": "^4.1.0",
     "cross-env": "^5.2.0",
-    "electron-builder": "21.1.1",
+    "electron-builder": "21.2.0",
     "node-sass": "^4.11.0",
     "prettier": "^1.16.4",
     "webpack": "4.29.6",
