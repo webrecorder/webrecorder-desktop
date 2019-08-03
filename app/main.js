@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, session } = require('electron');
+const { app, BrowserWindow, ipcMain, session, webContents } = require('electron');
 const path = require('path');
 const cp = require('child_process');
 const os = require('os');
@@ -6,6 +6,8 @@ const datShare = require('dat-share');
 const windowStateKeeper = require('electron-window-state');
 const MenuBuilder = require('./menu');
 const packageInfo = require('./package');
+const fetch = require('node-fetch');
+
 
 let debugOutput = [];
 let pluginName;
@@ -55,6 +57,7 @@ app.commandLine.appendSwitch('disable-renderer-backgrounding');
 app.commandLine.appendSwitch('disable-background-timer-throttling');
 app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
+//app.commandLine.appendSwitch('remote-debugging-port', '0');
 
 function addToDebugOutput(rawBuff) {
   const buff = rawBuff.toString();
@@ -256,6 +259,8 @@ app.on('web-contents-created', (e, contents) => {
       e.preventDefault();
       contents.loadURL(url);
     });
+
+    initUnloadListener(contents);
   }
 });
 
@@ -311,6 +316,98 @@ app.on('ready', async () => {
     createWindow();
   });
 });
+
+
+const initUnloadListener = function(wc) {
+  let lastUrl = null;
+  let url;
+
+  (async () => {
+    wc.debugger.attach();
+
+    await wc.debugger.sendCommand('DOM.enable');
+    await wc.debugger.sendCommand('Debugger.enable');
+
+    await wc.debugger.sendCommand('DOMDebugger.setEventListenerBreakpoint',
+                                  {'eventName': 'beforeunload'})
+
+    async function resume(event, method, params) {
+      if (method === 'Debugger.paused') {
+        const resp = await grabText(wc.debugger, true);
+        wc.debugger.sendCommand('Debugger.resume');
+        putText(resp);
+      }
+    }
+
+    wc.debugger.on('message', resume);
+  })();
+
+  async function grabText(deb, resumeCallback) {
+    url = wc.getURL();
+
+    if (resumeCallback) {
+      const abort = (url === lastUrl);
+      lastUrl = null;
+      if (abort) {
+        return;
+      }
+    } else {
+      lastUrl = url;
+    }
+
+    console.log(`*** Getting text from ${url} via ${resumeCallback ? ' debugger ' : ' history '} trigger`);
+
+    let resp = null;
+
+    try {
+      resp = await deb.sendCommand('DOM.getDocument', {'depth': -1, 'pierce': true});
+
+      console.log('got text!');
+    } catch (e) {
+      console.log(e);
+    }
+
+    return resp;
+  }
+
+  function putText(data) {
+    if (!data) {
+      console.log('no text');
+      return;
+    }
+
+    data = JSON.stringify(data);
+
+    const options = {
+      method: 'PUT',
+      credentials: 'include',
+      body: data,
+      headers: {
+        'Content-Type': 'application/json',
+        'x-requested-with': 'XMLHttpRequest'
+      }
+    };
+
+    fetch(`http://localhost:${port}/api/v1/remote/put-record?target_uri=dom-json:${url}`, options);
+
+    console.log(`Sent ${data.length}`);
+  }
+
+  ipcMain.on('unload-wait', (event) => {
+    if (!wc) {
+      return;
+    }
+
+    grabText(wc.debugger).then((resp) => {
+      event.reply('unload-resume');
+      putText(resp);
+    });
+  });
+
+  wc.once('destroyed', (event) => {
+    wc = null;
+  });
+}
 
 
 // renderer process communication

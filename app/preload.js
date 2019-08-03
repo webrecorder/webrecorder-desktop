@@ -20,3 +20,7 @@ class IPCHandler {
 
 window[wr_msg_handler] = new IPCHandler();
 
+window.addEventListener("beforeunload", function() {});
+
+//window.onbeforeunload = function(e) {}
+
