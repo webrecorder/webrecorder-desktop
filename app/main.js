@@ -361,8 +361,6 @@ const initUnloadListener = function(wc) {
 
     try {
       resp = await deb.sendCommand('DOM.getDocument', {'depth': -1, 'pierce': true});
-
-      console.log('got text!');
     } catch (e) {
       console.log(e);
     }
@@ -375,6 +373,14 @@ const initUnloadListener = function(wc) {
       console.log('no text');
       return;
     }
+
+    const accum = [];
+    const metadata = {};
+    parseText(data.root, metadata, accum);
+    const accumText = accum.join('\n');
+    console.log(accumText);
+    console.log(accumText.length);
+    console.log(metadata);
 
     data = JSON.stringify(data);
 
@@ -391,6 +397,48 @@ const initUnloadListener = function(wc) {
     fetch(`http://localhost:${port}/api/v1/remote/put-record?target_uri=dom-json:${url}`, options);
 
     console.log(`Sent ${data.length}`);
+  }
+
+  function parseText(node, metadata, accum) {
+    const SKIPPED_NODES = ["script", "style", "header", "footer"];
+    const EMPTY_LIST = [];
+    const TEXT = "#text";
+    const TITLE = "title";
+
+    const name = node.nodeName.toLowerCase();
+
+    if (SKIPPED_NODES.includes(name)) {
+      return;
+    }
+
+    const children = node.children || EMPTY_LIST;
+
+    if (name === TEXT) {
+      value = node.nodeValue ? node.nodeValue.trim() : '';
+      if (value) {
+        accum.push(value);
+      }
+    } else if (name === TITLE) {
+      const title = [];
+
+      for (let child of children) {
+        parseText(child, null, title);
+      }
+
+      if (metadata) {
+        metadata.title = title.join(' ');
+      } else {
+        accum.push(title.join(' '));
+      }
+    } else {
+      for (let child of children) {
+        parseText(child, metadata, accum);
+      }
+
+      if (node.contentDocument) {
+        parseText(node.contentDocument, null, accum);
+      }
+    }
   }
 
   ipcMain.on('unload-wait', (event) => {
