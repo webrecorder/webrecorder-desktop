@@ -1,13 +1,28 @@
-# Webrecorder Desktop
+# Webrecorder Desktop App
 
-Prototype for Webrecorder Desktop Electron App.
+The Webrecorder Desktop App is a repackaging of Webrecorder as an Electron application, with an integrated
+Chrome browser.
 
-Follow instructions below to build locally. More info coming soon!
+It includes the same functionality available on Webrecorder.io running as a local app, including the
+new [Autopilot](https://blog.webrecorder.io/2019/08/07/autopilot.html) feature.
+
+All data captured is stored in a local directory on your machine, in `Webrecorder-Data` in your Documents directory.
+
+Webrecorder Desktop is still in beta, and the latest beta pre-releases can be downloaded below or from [Releases](https://github.com/webrecorder/webrecorder-desktop/releases)
+
+| OS X | Windows (64-bit) | Windows (32-bit) | Linux |
+| --- | --- | --- | --- |
+| [.dmg](https://github.com/webrecorder/webrecorder-desktop/releases/download/v1.7.0-beta.4/webrecorder-1.7.0-beta.4.dmg) | [.exe (64-bit)](https://github.com/webrecorder/webrecorder-desktop/releases/download/v1.7.0-beta.4/webrecorder-win-x86_64-1.7.0-beta.4.exe) | [.exe (32-bit)](https://github.com/webrecorder/webrecorder-desktop/releases/download/v1.7.0-beta.4/webrecorder-win-x86-1.7.0-beta.4.exe) | [.AppImage](https://github.com/webrecorder/webrecorder-desktop/releases/download/v1.7.0-beta.4/webrecorder-1.7.0-beta.4.AppImage) |
+
+*Note: Running on Linux requires installation of Redis, available as a package on most distros.
+OS X and Windows versions come with a bundled version of Redis.*
 
 
 ## Full Local Build
 
-1) Clone with submodules
+Follow instructions below to build Webrecorder Desktop. More info coming soon!
+
+1) Clone with submodules (the submodule is the main [webrecorder/webrecorder](https://github.com/webrecorder), which contains most of the code)
 
 ```
 git clone --recurse-submodules https://github.com/webrecorder/webrecorder-desktop.git
