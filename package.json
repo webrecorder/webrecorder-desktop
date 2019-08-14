@@ -1,6 +1,6 @@
 {
   "name": "webrecorder",
-  "version": "1.7.0-beta.3",
+  "version": "1.7.0-beta.4",
   "description": "Webrecorder -- Standalone Web Archive Browser App",
   "scripts": {
     "build": "node build-desktop.js",
@@ -46,7 +46,8 @@
     ],
     "extraResources": [
       "python-binaries/",
-      "plugins"
+      "plugins",
+      "behaviors.tar.gz"
     ],
     "mac": {
       "category": "public.app-category.utilities",
@@ -101,7 +102,7 @@
   "dependencies": {
     "dat-node": "^3.5.15",
     "dat-share": "https://github.com/webrecorder/dat-share.git",
-    "electron": "6.0.0",
+    "electron": "6.0.2",
     "electron-debug": "^2.2.0",
     "electron-devtools-installer": "^2.2.4",
     "electron-publisher-s3": "^20.17.2",

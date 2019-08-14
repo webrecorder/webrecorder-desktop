@@ -22,6 +22,8 @@ const stdio = ['ignore', 'pipe', 'pipe'];
 const wrConfig = {};
 const pluginDir = 'plugins';
 
+const dataPath = path.join(app.getPath('documents'), 'Webrecorder-Data');
+
 const username = os.userInfo().username;
 
 
@@ -165,8 +167,7 @@ function createWindow() {
   menuBuilder.buildMenu();
 }
 
-function startWebrecorder() {
-  const dataPath = path.join(app.getPath('documents'), 'Webrecorder-Data');
+function startWebrecorder(datApiPort) {
   let cmdline = [
     '--no-browser',
     '--loglevel',
@@ -176,8 +177,15 @@ function startWebrecorder() {
     '-u',
     username,
     '--port',
-    0
+    0,
+    '--behaviors-tarfile',
+    path.join(projectDir, 'python-binaries', 'behaviors.tar.gz'),
   ];
+
+  if (datApiPort) {
+    cmdline.push('--dat-share-port');
+    cmdline.push(datApiPort);
+  }
 
   Object.assign(wrConfig, { dataPath });
 
@@ -268,28 +276,25 @@ app.on('ready', async () => {
     });
   });
 
-  const dataPath = path.join(
-    app.getPath('downloads'),
-    'Webrecorder-Data',
-    'storage'
-  );
-
   const datOpts = {
     host: 'localhost',
-    port: 3000,
+    port: 0,
     swarmManager: {
-      port: 3282,
-      rootDir: dataPath
+      port: 0,
+      rootDir: path.join(dataPath, 'storage')
     }
   };
 
+  let datApiPort = null;
+
   try {
-    await datShare.initServer(datOpts);
+    const datres = await datShare.initServer(datOpts);
+    datApiPort = datres.server.address().port;
   } catch(e) {
     console.log('Error Loading Dat Share -- Already running on same port?');
   }
 
-  await startWebrecorder();
+  await startWebrecorder(datApiPort);
   console.log('Python App Started: ' + port);
 
   process.env.INTERNAL_HOST = 'localhost';
