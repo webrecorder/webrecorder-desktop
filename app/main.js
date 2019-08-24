@@ -16,6 +16,8 @@ let webrecorderProcess;
 let numWindows = 0;
 let proxyConfig = {};
 
+let browserState = null;
+
 const projectDir = path.join(__dirname, '../');
 const webrecorderBin = path.join(projectDir, 'python-binaries', 'webrecorder');
 const stdio = ['ignore', 'pipe', 'pipe'];
@@ -163,7 +165,9 @@ function createWindow() {
     }
   });
 
-  const menuBuilder = new MenuBuilder(mainWindow, createWindow);
+  browserState = new BrowserState();
+
+  const menuBuilder = new MenuBuilder(mainWindow, createWindow, browserState);
   menuBuilder.buildMenu();
 }
 
@@ -248,6 +252,7 @@ app.on('window-all-closed', () => {
   app.quit();
 });
 
+
 // Ensure new-window urls are just opened directly in the webview
 app.on('web-contents-created', (e, contents) => {
   if (contents.getType() === 'webview') {
@@ -255,6 +260,12 @@ app.on('web-contents-created', (e, contents) => {
     contents.on('new-window', (e, url) => {
       e.preventDefault();
       contents.loadURL(url);
+    });
+
+    browserState.init(contents);
+
+    contents.on('destroyed', () => {
+      browserState.close();
     });
   }
 });
@@ -303,7 +314,7 @@ app.on('ready', async () => {
 
   const seshReplay = session.fromPartition(`persist:${username}-replay`, { cache: true });
 
-  const seshLiveRecord = session.fromPartition(`persist:${username}`, { cache: false });
+  const seshLiveRecord = session.fromPartition(`persist:${username}`, { cache: true });
 
   proxyConfig = { proxyRules: `localhost:${port}` };
 
@@ -315,7 +326,7 @@ app.on('ready', async () => {
 
 // renderer process communication
 ipcMain.on('toggle-proxy', (evt, arg) => {
-  const sesh = session.fromPartition(`persist:${username}`, { cache: false });
+  const sesh = session.fromPartition(`persist:${username}`, { cache: true });
 
   const rules = arg ? proxyConfig : {};
 
@@ -332,8 +343,109 @@ ipcMain.on('async-call', (evt, arg) => {
 });
 
 
-ipcMain.on('clear-cookies', () => {
-  // get current session
-  const sesh = session.fromPartition(`persist:${username}`);
-  sesh.clearStorageData({ storages: 'cookies' }, () => console.log('cookies cleared !'));
+ipcMain.on('clear-cookies', (evt, isReplay) => {
+  if (browserState) {
+    browserState.clearCookies(isReplay);
+  }
 });
+
+
+class BrowserState {
+  constructor() {
+    this.contents = null;
+
+    this.mobile = false;
+    this.muted = false;
+  }
+
+  init(contents) {
+    this.contents = contents;
+
+    if (this.mobile) {
+      this.setMobile(true);
+    }
+
+    if (this.muted) {
+      this.contents.setAudioMuted(true);
+    }
+  }
+
+  close() {
+    this.contents = null;
+  }
+
+  setMute(muted) {
+    console.log(muted);
+
+    this.muted = muted;
+    if (this.contents) {
+      this.contents.setAudioMuted(muted);
+    }
+  }
+
+  getMute() {
+    return this.muted;
+  }
+
+  async setMobile(mobile) {
+    this.mobile = mobile;
+
+    if (!this.contents) {
+      return;
+    }
+
+    let ua = null;
+
+    if (mobile) {
+      ua = this.contents.getUserAgent()
+      .replace(/\([^)]+\)/, "(Linux; Android 5.0; SM-G900P Build/LRX21T)")
+      .replace(/Electron[^\s]+/, 'Mobile');
+    } else {
+      ua = session.defaultSession.getUserAgent();
+    }
+
+    this.contents.setUserAgent(ua);
+
+    const db = this.contents.debugger;
+
+    if (!db.isAttached()) {
+      db.attach();
+    }
+
+    await db.sendCommand('Emulation.setDeviceMetricsOverride', {
+      'width': 0,
+      'height': 0,
+      'deviceScaleFactor': 0,
+      'mobile': mobile,
+    });
+
+    await db.sendCommand('Emulation.setTouchEmulationEnabled', {'enabled': mobile});
+
+    await db.sendCommand('Emulation.setEmitTouchEventsForMouse', {'enabled': mobile});
+
+    if (!mobile) {
+      db.detach();
+    }
+  }
+
+  getMobile() {
+    return this.mobile;
+  }
+
+  clearCookies(isReplay = false) {
+    // get current session
+    const sesh = session.fromPartition(isReplay ? `persist:${username}-replay` : `persist:${username}`);
+    return sesh.clearStorageData();
+  }
+
+  toggleDevTools() {
+    if (!this.contents) return;
+
+    if (!this.contents.isDevToolsOpened()) {
+      this.contents.openDevTools({'mode': 'undocked', 'activate': true});
+    } else {
+      this.contents.closeDevTools();
+    }
+  }
+}
+
