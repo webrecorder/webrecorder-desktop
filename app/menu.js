@@ -14,7 +14,7 @@ module.exports = class MenuBuilder {
 
     this.createWindowFunc = createWindowFunc;
 
-    this.state = browserState;
+    this.state = browserState
   }
 
   buildMenu() {
@@ -132,7 +132,7 @@ module.exports = class MenuBuilder {
           }
         },
         {
-          label: 'Toggle App Developer Tools',
+          label: 'Show App Developer Tools',
           type: 'checkbox',
           checked: true,
           accelerator: 'Alt+Ctrl+J',
@@ -141,15 +141,17 @@ module.exports = class MenuBuilder {
           }
         },
         {
-          label: 'Toggle Page Developer Tools',
+          label: 'Show Page Developer Tools',
           type: 'checkbox',
+          id: 'devtools',
+          enabled: false,
           accelerator: 'Alt+Ctrl+I',
           click: () => {
             this.state.toggleDevTools();
           }
         },
         {
-          label: 'Toggle Full Screen',
+          label: 'View Full Screen',
           type: 'checkbox',
           accelerator: 'Ctrl+Command+F',
           click: () => {
@@ -162,15 +164,17 @@ module.exports = class MenuBuilder {
       label: 'View',
       submenu: [
         {
-          label: 'Toggle Page Developer Tools',
+          label: 'Show Page Developer Tools',
           type: 'checkbox',
+          id: 'devtools',
+          enabled: false,
           accelerator: 'Alt+Ctrl+I',
           click: () => {
             this.state.toggleDevTools();
           }
         },
         {
-          label: 'Toggle Full Screen',
+          label: 'View Full Screen',
           type: 'checkbox',
           accelerator: 'Ctrl+Command+F',
           click: () => {
@@ -252,15 +256,17 @@ module.exports = class MenuBuilder {
                   }
                 },
                 {
-                  label: 'Toggle Page Developer Tools',
+                  label: 'Show Page Developer Tools',
                   type: 'checkbox',
+                  id: 'devtools',
+                  enabled: false,
                   accelerator: 'Alt+Ctrl+I',
                   click: () => {
                     this.state.toggleDevTools();
                   }
                 },
                 {
-                  label: 'Toggle App Developer Tools',
+                  label: 'Show App Developer Tools',
                   type: 'checkbox',
                   checked: true,
                   accelerator: 'Alt+Ctrl+J',
@@ -269,7 +275,7 @@ module.exports = class MenuBuilder {
                   }
                 },
                 {
-                  label: 'Toggle Full Screen',
+                  label: 'View Full Screen',
                   type: 'checkbox',
                   accelerator: 'F11',
                   click: () => {
@@ -281,15 +287,17 @@ module.exports = class MenuBuilder {
               ]
             : [
                 {
-                  label: 'Toggle Page Developer Tools',
+                  label: 'Show Page Developer Tools',
                   type: 'checkbox',
+                  id: 'devtools',
+                  enabled: false,
                   accelerator: 'Alt+Ctrl+I',
                   click: () => {
                     this.state.toggleDevTools();
                   }
                 },
                 {
-                  label: 'Toggle Full Screen',
+                  label: 'View Full Screen',
                   type: 'checkbox',
                   accelerator: 'F11',
                   click: () => {
@@ -330,6 +338,13 @@ module.exports = class MenuBuilder {
               this.state.clearCookies();
             }
           },
+          {
+            label: 'Clear Cache',
+            click: () => {
+              this.state.clearCache();
+            }
+          },
+          { type: 'separator' },
           {
             label: 'Mute Audio',
             type: 'checkbox',

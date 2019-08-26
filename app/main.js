@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, session } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, Menu, session } = require('electron');
 const path = require('path');
 const cp = require('child_process');
 const os = require('os');
@@ -9,7 +9,6 @@ const packageInfo = require('./package');
 
 let debugOutput = [];
 let pluginName;
-let port;
 let spawnOptions;
 let webrecorderProcess;
 
@@ -72,10 +71,14 @@ function addToDebugOutput(rawBuff) {
   return buff;
 }
 
+function getSession(isReplay = false) {
+  return session.fromPartition(isReplay ? `persist:${username}-replay` : `persist:${username}`, { cache: true });
+}
+
 function findPort(rawBuff) {
   const buff = addToDebugOutput(rawBuff);
 
-  if (!buff || port) {
+  if (!buff) {
     return;
   }
 
@@ -84,7 +87,7 @@ function findPort(rawBuff) {
     return;
   }
 
-  port = parts[1].trim();
+  const port = parts[1].trim();
 
   if (process.platform !== 'win32') {
     webrecorderProcess.unref();
@@ -195,11 +198,23 @@ function startWebrecorder(datApiPort) {
 
   console.log(cmdline.join(' '));
 
+  const prr = {
+    resolve: null,
+    reject: null,
+    promise: null
+  };
+
+  prr.promise = new Promise((resolve, reject) => {
+    prr.resolve = resolve;
+    prr.reject = reject;
+  });
+
   webrecorderProcess = cp.spawn(webrecorderBin, cmdline, spawnOptions);
 
   // catch any errors spawning webrecorder binary and add to debug info
   webrecorderProcess.on('error', err => {
     debugOutput.push(`Error spawning ${webrecorderBin} binary:\n ${err}\n\n`);
+    prr.reject(err);
   });
 
   // log any stderr notices
@@ -218,17 +233,6 @@ function startWebrecorder(datApiPort) {
   });
 
   let foundPortAppURL = false;
-
-  const prr = {
-    resolve: null,
-    reject: null,
-    promise: null
-  };
-
-  prr.promise = new Promise((resolve, reject) => {
-    prr.resolve = resolve;
-    prr.reject = reject;
-  });
 
   webrecorderProcess.stdout.on('data', buff => {
     if (!foundPortAppURL) {
@@ -267,6 +271,10 @@ app.on('web-contents-created', (e, contents) => {
     contents.on('destroyed', () => {
       browserState.close();
     });
+
+    contents.on('devtools-closed', () => {
+      browserState.setDevtoolsItem(true);
+    });
   }
 });
 
@@ -278,7 +286,10 @@ app.on('ready', async () => {
     await installExtensions();
   }
 
-  cp.execFile(webrecorderBin, ['--version'], (err, stdout, stderr) => {
+  cp.execFile(webrecorderBin, ['--version'], (error, stdout, stderr) => {
+    if (error) {
+      stdout = '<error - no version>';
+    }
     const electronVersion = `electron ${process.versions.electron}<BR>
                              chrome ${process.versions.chrome}`;
     Object.assign(wrConfig, {
@@ -287,36 +298,57 @@ app.on('ready', async () => {
     });
   });
 
-  const datOpts = {
-    host: 'localhost',
-    port: 0,
-    swarmManager: {
-      port: 0,
-      rootDir: path.join(dataPath, 'storage')
-    }
-  };
-
+  // enable dat if true
+  const allowDat = true;
   let datApiPort = null;
 
-  try {
-    const datres = await datShare.initServer(datOpts);
-    datApiPort = datres.server.address().port;
-  } catch(e) {
-    console.log('Error Loading Dat Share -- Already running on same port?');
+  if (allowDat) {
+    const datOpts = {
+      host: 'localhost',
+      port: 0,
+      swarmManager: {
+        port: 0,
+        rootDir: path.join(dataPath, 'storage')
+      }
+    };
+
+    try {
+      const datres = await datShare.initServer(datOpts);
+      datApiPort = datres.server.address().port;
+      process.env.ALLOW_DAT = true;
+    } catch(e) {
+      console.log('Error Loading Dat Share -- Already running on same port?');
+      process.env.ALLOW_DAT = false;
+    }
   }
 
-  await startWebrecorder(datApiPort);
-  console.log('Python App Started: ' + port);
+  const sd = new Date();
 
-  process.env.INTERNAL_HOST = 'localhost';
-  process.env.INTERNAL_PORT = port;
-  process.env.ALLOW_DAT = true;
+  try {
+    const { port } = await startWebrecorder(datApiPort);
+    console.log('Python App Started on %s (startup %dms)\n', port, new Date() - sd);
 
-  const seshReplay = session.fromPartition(`persist:${username}-replay`, { cache: true });
+    process.env.INTERNAL_HOST = 'localhost';
+    process.env.INTERNAL_PORT = port;
 
-  const seshLiveRecord = session.fromPartition(`persist:${username}`, { cache: true });
+    proxyConfig = { proxyRules: `localhost:${port}` };
+  } catch (e) {
+    console.log(`Error launching python app, exiting: ${e}`);
+    const detail = `Sorry, there was an error launching the Webrecorder Python App and Webrecorder Desktop
+must exit.
 
-  proxyConfig = { proxyRules: `localhost:${port}` };
+Please try again or contact us at support@webrecorder.io if the error persists.
+
+Details:
+${e}
+`;
+
+    dialog.showMessageBoxSync({'type': 'error', 'detail': detail});
+    app.exit(127);
+  }
+
+  const seshReplay = getSession(true);
+  const seshLiveRecord = getSession(false);
 
   seshReplay.setProxy(proxyConfig, () => {
     createWindow();
@@ -326,7 +358,7 @@ app.on('ready', async () => {
 
 // renderer process communication
 ipcMain.on('toggle-proxy', (evt, arg) => {
-  const sesh = session.fromPartition(`persist:${username}`, { cache: true });
+  const sesh = getSession(false);
 
   const rules = arg ? proxyConfig : {};
 
@@ -368,15 +400,30 @@ class BrowserState {
     if (this.muted) {
       this.contents.setAudioMuted(true);
     }
+
+    this.setDevtoolsItem(true);
+    //this.clearCache();
   }
 
   close() {
     this.contents = null;
+    this.setDevtoolsItem(false);
+  }
+
+  setDevtoolsItem(enabled) {
+    const menu = Menu.getApplicationMenu();
+    if (!menu) {
+      return;
+    }
+
+    const item = menu.getMenuItemById('devtools');
+    if (item) {
+      item.enabled = enabled;
+      item.checked = false;
+    }
   }
 
   setMute(muted) {
-    console.log(muted);
-
     this.muted = muted;
     if (this.contents) {
       this.contents.setAudioMuted(muted);
@@ -434,8 +481,14 @@ class BrowserState {
 
   clearCookies(isReplay = false) {
     // get current session
-    const sesh = session.fromPartition(isReplay ? `persist:${username}-replay` : `persist:${username}`);
+    const sesh = getSession(isReplay);
     return sesh.clearStorageData();
+  }
+
+  clearCache(isReplay = false) {
+    // get current session
+    const sesh = getSession(isReplay);
+    return sesh.clearCache();
   }
 
   toggleDevTools() {
