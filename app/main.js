@@ -46,7 +46,6 @@ switch (process.platform) {
     break;
 }
 
-app.commandLine.appendSwitch('ignore-certificate-errors');
 app.commandLine.appendSwitch(
   'ppapi-flash-path',
   path.join(projectDir, pluginDir, pluginName)
@@ -350,11 +349,16 @@ ${e}
   const seshReplay = getSession(true);
   const seshLiveRecord = getSession(false);
 
-  seshReplay.setProxy(proxyConfig, () => {
+  // verify the self-signed cert
+  const certVerify = (request, callback) => callback(0);
+
+  seshReplay.setCertificateVerifyProc(certVerify);
+  seshLiveRecord.setCertificateVerifyProc(certVerify);
+
+  seshReplay.setProxy(proxyConfig).then(() => {
     createWindow();
   });
 });
-
 
 // renderer process communication
 ipcMain.on('toggle-proxy', (evt, arg) => {
@@ -362,7 +366,7 @@ ipcMain.on('toggle-proxy', (evt, arg) => {
 
   const rules = arg ? proxyConfig : {};
 
-  sesh.setProxy(rules, () => {
+  sesh.setProxy(rules).then(() => {
     console.log('proxy set:', rules);
     evt.sender.send('toggle-proxy-done', {});
   });
@@ -402,7 +406,7 @@ class BrowserState {
     }
 
     this.setDevtoolsItem(true);
-    //this.clearCache();
+    this.clearCache();
   }
 
   close() {
