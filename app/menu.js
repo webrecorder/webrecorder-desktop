@@ -353,7 +353,7 @@ module.exports = class MenuBuilder {
             }
           },
           {
-            label: 'Enable Mobile Mode',
+            label: 'Enable Mobile Device Emulation',
             type: 'checkbox',
             click: (item) => {
               this.state.setMobile(item.checked);
