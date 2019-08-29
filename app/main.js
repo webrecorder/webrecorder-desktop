@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, session } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, Menu, session } = require('electron');
 const path = require('path');
 const cp = require('child_process');
 const os = require('os');
@@ -9,12 +9,15 @@ const packageInfo = require('./package');
 
 let debugOutput = [];
 let pluginName;
-let port;
 let spawnOptions;
 let webrecorderProcess;
 
 let numWindows = 0;
 let proxyConfig = {};
+
+let browserState = null;
+
+let desktopUA, mobileUA;
 
 const projectDir = path.join(__dirname, '../');
 const webrecorderBin = path.join(projectDir, 'python-binaries', 'webrecorder');
@@ -45,7 +48,6 @@ switch (process.platform) {
     break;
 }
 
-app.commandLine.appendSwitch('ignore-certificate-errors');
 app.commandLine.appendSwitch(
   'ppapi-flash-path',
   path.join(projectDir, pluginDir, pluginName)
@@ -70,10 +72,14 @@ function addToDebugOutput(rawBuff) {
   return buff;
 }
 
+function getSession(isReplay = false) {
+  return session.fromPartition(isReplay ? `persist:${username}-replay` : `persist:${username}`, { cache: true });
+}
+
 function findPort(rawBuff) {
   const buff = addToDebugOutput(rawBuff);
 
-  if (!buff || port) {
+  if (!buff) {
     return;
   }
 
@@ -82,7 +88,7 @@ function findPort(rawBuff) {
     return;
   }
 
-  port = parts[1].trim();
+  const port = parts[1].trim();
 
   if (process.platform !== 'win32') {
     webrecorderProcess.unref();
@@ -163,7 +169,9 @@ function createWindow() {
     }
   });
 
-  const menuBuilder = new MenuBuilder(mainWindow, createWindow);
+  browserState = new BrowserState();
+
+  const menuBuilder = new MenuBuilder(mainWindow, createWindow, browserState);
   menuBuilder.buildMenu();
 }
 
@@ -191,11 +199,23 @@ function startWebrecorder(datApiPort) {
 
   console.log(cmdline.join(' '));
 
+  const prr = {
+    resolve: null,
+    reject: null,
+    promise: null
+  };
+
+  prr.promise = new Promise((resolve, reject) => {
+    prr.resolve = resolve;
+    prr.reject = reject;
+  });
+
   webrecorderProcess = cp.spawn(webrecorderBin, cmdline, spawnOptions);
 
   // catch any errors spawning webrecorder binary and add to debug info
   webrecorderProcess.on('error', err => {
     debugOutput.push(`Error spawning ${webrecorderBin} binary:\n ${err}\n\n`);
+    prr.reject(err);
   });
 
   // log any stderr notices
@@ -214,17 +234,6 @@ function startWebrecorder(datApiPort) {
   });
 
   let foundPortAppURL = false;
-
-  const prr = {
-    resolve: null,
-    reject: null,
-    promise: null
-  };
-
-  prr.promise = new Promise((resolve, reject) => {
-    prr.resolve = resolve;
-    prr.reject = reject;
-  });
 
   webrecorderProcess.stdout.on('data', buff => {
     if (!foundPortAppURL) {
@@ -248,6 +257,7 @@ app.on('window-all-closed', () => {
   app.quit();
 });
 
+
 // Ensure new-window urls are just opened directly in the webview
 app.on('web-contents-created', (e, contents) => {
   if (contents.getType() === 'webview') {
@@ -255,6 +265,16 @@ app.on('web-contents-created', (e, contents) => {
     contents.on('new-window', (e, url) => {
       e.preventDefault();
       contents.loadURL(url);
+    });
+
+    browserState.init(contents);
+
+    contents.on('destroyed', () => {
+      browserState.close();
+    });
+
+    contents.on('devtools-closed', () => {
+      browserState.setDevtoolsItem(true);
     });
   }
 });
@@ -267,7 +287,10 @@ app.on('ready', async () => {
     await installExtensions();
   }
 
-  cp.execFile(webrecorderBin, ['--version'], (err, stdout, stderr) => {
+  cp.execFile(webrecorderBin, ['--version'], (error, stdout, stderr) => {
+    if (error) {
+      stdout = '<error - no version>';
+    }
     const electronVersion = `electron ${process.versions.electron}<BR>
                              chrome ${process.versions.chrome}`;
     Object.assign(wrConfig, {
@@ -276,50 +299,80 @@ app.on('ready', async () => {
     });
   });
 
-  const datOpts = {
-    host: 'localhost',
-    port: 0,
-    swarmManager: {
-      port: 0,
-      rootDir: path.join(dataPath, 'storage')
-    }
-  };
-
+  // enable dat if true
+  const allowDat = true;
   let datApiPort = null;
 
-  try {
-    const datres = await datShare.initServer(datOpts);
-    datApiPort = datres.server.address().port;
-  } catch(e) {
-    console.log('Error Loading Dat Share -- Already running on same port?');
+  if (allowDat) {
+    const datOpts = {
+      host: 'localhost',
+      port: 0,
+      swarmManager: {
+        port: 0,
+        rootDir: path.join(dataPath, 'storage')
+      }
+    };
+
+    try {
+      const datres = await datShare.initServer(datOpts);
+      datApiPort = datres.server.address().port;
+      process.env.ALLOW_DAT = true;
+    } catch(e) {
+      console.log('Error Loading Dat Share -- Already running on same port?');
+      process.env.ALLOW_DAT = false;
+    }
   }
 
-  await startWebrecorder(datApiPort);
-  console.log('Python App Started: ' + port);
+  const sd = new Date();
 
-  process.env.INTERNAL_HOST = 'localhost';
-  process.env.INTERNAL_PORT = port;
-  process.env.ALLOW_DAT = true;
+  try {
+    const { port } = await startWebrecorder(datApiPort);
+    console.log('Python App Started on %s (startup %dms)\n', port, new Date() - sd);
 
-  const seshReplay = session.fromPartition(`persist:${username}-replay`, { cache: true });
+    process.env.INTERNAL_HOST = 'localhost';
+    process.env.INTERNAL_PORT = port;
 
-  const seshLiveRecord = session.fromPartition(`persist:${username}`, { cache: false });
+    proxyConfig = { proxyRules: `localhost:${port}` };
+  } catch (e) {
 
-  proxyConfig = { proxyRules: `localhost:${port}` };
+    const detail = getPythonAppErrorDetail(e);
 
-  seshReplay.setProxy(proxyConfig, () => {
+    dialog.showMessageBoxSync({'type': 'error', 'detail': detail});
+    app.exit(127);
+  }
+
+  const seshReplay = getSession(true);
+  const seshLiveRecord = getSession(false);
+
+  // set ua
+  const ua = session.defaultSession.getUserAgent();
+  desktopUA = ua.replace(/ Electron[^\s]+/, '');
+
+  mobileUA = ua
+    .replace(/\([^)]+\)/, "(Linux; Android 5.0; SM-G900P Build/LRX21T)")
+    .replace(/Electron[^\s]+/, 'Mobile');
+
+  seshReplay.setUserAgent(desktopUA);
+  seshLiveRecord.setUserAgent(desktopUA);
+
+  // verify the self-signed cert
+  const certVerify = (request, callback) => callback(0);
+
+  seshReplay.setCertificateVerifyProc(certVerify);
+  seshLiveRecord.setCertificateVerifyProc(certVerify);
+
+  seshReplay.setProxy(proxyConfig).then(() => {
     createWindow();
   });
 });
 
-
 // renderer process communication
 ipcMain.on('toggle-proxy', (evt, arg) => {
-  const sesh = session.fromPartition(`persist:${username}`, { cache: false });
+  const sesh = getSession(false);
 
   const rules = arg ? proxyConfig : {};
 
-  sesh.setProxy(rules, () => {
+  sesh.setProxy(rules).then(() => {
     console.log('proxy set:', rules);
     evt.sender.send('toggle-proxy-done', {});
   });
@@ -332,8 +385,131 @@ ipcMain.on('async-call', (evt, arg) => {
 });
 
 
-ipcMain.on('clear-cookies', () => {
-  // get current session
-  const sesh = session.fromPartition(`persist:${username}`);
-  sesh.clearStorageData({ storages: 'cookies' }, () => console.log('cookies cleared !'));
+ipcMain.on('clear-cookies', (evt, isReplay) => {
+  if (browserState) {
+    browserState.clearCookies(isReplay);
+  }
 });
+
+
+class BrowserState {
+  constructor() {
+    this.contents = null;
+
+    this.mobile = false;
+    this.muted = false;
+  }
+
+  init(contents) {
+    this.contents = contents;
+
+    if (this.mobile) {
+      this.setMobile(true);
+    }
+
+    if (this.muted) {
+      this.contents.setAudioMuted(true);
+    }
+
+    this.setDevtoolsItem(true);
+    this.clearCache();
+  }
+
+  close() {
+    this.contents = null;
+    this.setDevtoolsItem(false);
+  }
+
+  setDevtoolsItem(enabled) {
+    const menu = Menu.getApplicationMenu();
+    if (!menu) {
+      return;
+    }
+
+    const item = menu.getMenuItemById('devtools');
+    if (item) {
+      item.enabled = enabled;
+      item.checked = false;
+    }
+  }
+
+  setMute(muted) {
+    this.muted = muted;
+    if (this.contents) {
+      this.contents.setAudioMuted(muted);
+    }
+  }
+
+  getMute() {
+    return this.muted;
+  }
+
+  async setMobile(mobile) {
+    this.mobile = mobile;
+
+    if (!this.contents) {
+      return;
+    }
+
+    this.contents.setUserAgent(mobile ? mobileUA : desktopUA);
+
+    const db = this.contents.debugger;
+
+    if (!db.isAttached()) {
+      db.attach();
+    }
+
+    await db.sendCommand('Emulation.setDeviceMetricsOverride', {
+      'width': 0,
+      'height': 0,
+      'deviceScaleFactor': 0,
+      'mobile': mobile,
+    });
+
+    await db.sendCommand('Emulation.setTouchEmulationEnabled', {'enabled': mobile});
+
+    await db.sendCommand('Emulation.setEmitTouchEventsForMouse', {'enabled': mobile});
+
+    if (!mobile) {
+      db.detach();
+    }
+  }
+
+  getMobile() {
+    return this.mobile;
+  }
+
+  clearCookies(isReplay = false) {
+    // get current session
+    const sesh = getSession(isReplay);
+    return sesh.clearStorageData();
+  }
+
+  clearCache(isReplay = false) {
+    // get current session
+    const sesh = getSession(isReplay);
+    return sesh.clearCache();
+  }
+
+  toggleDevTools() {
+    if (!this.contents) return;
+
+    if (!this.contents.isDevToolsOpened()) {
+      this.contents.openDevTools({'mode': 'undocked', 'activate': true});
+    } else {
+      this.contents.closeDevTools();
+    }
+  }
+}
+
+function getPythonAppErrorDetail(e) {
+    console.log(`Error launching python app, exiting: ${e}`);
+    return `Sorry, there was an error launching the Webrecorder Python App and Webrecorder Desktop
+must exit.
+
+Please try again or contact us at support@webrecorder.io if the error persists.
+
+Details:
+${e}`;
+
+}

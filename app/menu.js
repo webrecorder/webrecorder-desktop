@@ -6,13 +6,15 @@ module.exports = class MenuBuilder {
    *
    * @param {BrowserWindow} mainWindow
    */
-  constructor(mainWindow, createWindowFunc) {
+  constructor(mainWindow, createWindowFunc, browserState) {
     /**
      * @type {BrowserWindow}
      */
     this.mainWindow = mainWindow;
 
     this.createWindowFunc = createWindowFunc;
+
+    this.state = browserState
   }
 
   buildMenu() {
@@ -130,21 +132,27 @@ module.exports = class MenuBuilder {
           }
         },
         {
-          label: 'Toggle App Developer Tools',
+          label: 'Show App Developer Tools',
+          type: 'checkbox',
+          checked: true,
           accelerator: 'Alt+Ctrl+J',
           click: () => {
             this.mainWindow.toggleDevTools();
           }
         },
         {
-          label: 'Toggle Page Developer Tools',
+          label: 'Show Page Developer Tools',
+          type: 'checkbox',
+          id: 'devtools',
+          enabled: false,
           accelerator: 'Alt+Ctrl+I',
           click: () => {
-            this.mainWindow.webContents.send('toggle-devtools');
+            this.state.toggleDevTools();
           }
         },
         {
-          label: 'Toggle Full Screen',
+          label: 'View Full Screen',
+          type: 'checkbox',
           accelerator: 'Ctrl+Command+F',
           click: () => {
             this.mainWindow.setFullScreen(!this.mainWindow.isFullScreen());
@@ -156,14 +164,18 @@ module.exports = class MenuBuilder {
       label: 'View',
       submenu: [
         {
-          label: 'Toggle Page Developer Tools',
+          label: 'Show Page Developer Tools',
+          type: 'checkbox',
+          id: 'devtools',
+          enabled: false,
           accelerator: 'Alt+Ctrl+I',
           click: () => {
-            this.mainWindow.webContents.send('toggle-devtools');
+            this.state.toggleDevTools();
           }
         },
         {
-          label: 'Toggle Full Screen',
+          label: 'View Full Screen',
+          type: 'checkbox',
           accelerator: 'Ctrl+Command+F',
           click: () => {
             this.mainWindow.setFullScreen(!this.mainWindow.isFullScreen());
@@ -209,6 +221,7 @@ module.exports = class MenuBuilder {
       subMenuFile,
       subMenuEdit,
       subMenuView,
+      this.getOptionsMenu(),
       subMenuWindow,
       subMenuHelp
     ];
@@ -229,6 +242,7 @@ module.exports = class MenuBuilder {
           },
         ]
       },
+      this.getOptionsMenu(),
       {
         label: '&View',
         submenu:
@@ -242,21 +256,27 @@ module.exports = class MenuBuilder {
                   }
                 },
                 {
-                  label: 'Toggle Page Developer Tools',
+                  label: 'Show Page Developer Tools',
+                  type: 'checkbox',
+                  id: 'devtools',
+                  enabled: false,
                   accelerator: 'Alt+Ctrl+I',
                   click: () => {
-                    this.mainWindow.webContents.send('toggle-devtools');
+                    this.state.toggleDevTools();
                   }
                 },
                 {
-                  label: 'Toggle App Developer Tools',
+                  label: 'Show App Developer Tools',
+                  type: 'checkbox',
+                  checked: true,
                   accelerator: 'Alt+Ctrl+J',
                   click: () => {
                     this.mainWindow.toggleDevTools();
                   }
                 },
                 {
-                  label: 'Toggle Full Screen',
+                  label: 'View Full Screen',
+                  type: 'checkbox',
                   accelerator: 'F11',
                   click: () => {
                     this.mainWindow.setFullScreen(
@@ -267,14 +287,18 @@ module.exports = class MenuBuilder {
               ]
             : [
                 {
-                  label: 'Toggle Page Developer Tools',
+                  label: 'Show Page Developer Tools',
+                  type: 'checkbox',
+                  id: 'devtools',
+                  enabled: false,
                   accelerator: 'Alt+Ctrl+I',
                   click: () => {
-                    this.mainWindow.webContents.send('toggle-devtools');
+                    this.state.toggleDevTools();
                   }
                 },
                 {
-                  label: 'Toggle Full Screen',
+                  label: 'View Full Screen',
+                  type: 'checkbox',
                   accelerator: 'F11',
                   click: () => {
                     this.mainWindow.setFullScreen(
@@ -303,4 +327,42 @@ module.exports = class MenuBuilder {
       }
     ];
   }
+
+  getOptionsMenu() {
+    const menuConfig = {
+        label: '&Options',
+        submenu: [
+          {
+            label: 'Clear Cookies',
+            click: () => {
+              this.state.clearCookies();
+            }
+          },
+          {
+            label: 'Clear Cache',
+            click: () => {
+              this.state.clearCache();
+            }
+          },
+          { type: 'separator' },
+          {
+            label: 'Mute Audio',
+            type: 'checkbox',
+            click: (item) => {
+              this.state.setMute(item.checked);
+            }
+          },
+          {
+            label: 'Enable Mobile Device Emulation',
+            type: 'checkbox',
+            click: (item) => {
+              this.state.setMobile(item.checked);
+            }
+          },
+        ],
+    };
+
+    return menuConfig;
+  }
+
 };

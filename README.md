@@ -1,7 +1,6 @@
 # Webrecorder Desktop App
 
-The Webrecorder Desktop App is a repackaging of Webrecorder as an Electron application, with an integrated
-Chrome browser.
+The Webrecorder Desktop App is a complete packaging of [Webrecorder](https://github.com/webrecorder/webrecorder) hosted service as an Electron application, with an integrated Chromium browser.
 
 It includes the same functionality available on Webrecorder.io running as a local app, including the
 new [Autopilot](https://blog.webrecorder.io/2019/08/07/autopilot.html) feature.
@@ -17,10 +16,49 @@ Webrecorder Desktop is still in beta, and the latest beta pre-releases can be do
 *Note: Running on Linux requires installation of Redis, available as a package on most distros.
 OS X and Windows versions come with a bundled version of Redis.*
 
+## Current Features
+
+In addition to the core Webrecorder functionality, the desktop app includes additional features specific to the desktop environmentment. A few of these brand new features are still experimental, as listed below, so please let us know if anything is not working as expected!
+
+
+### Latest Chromium Browser with Flash Support
+
+Like Webrecorder Player, the Webrecorder Desktop app is built with Electron, and includes the latest release of Chromium, ensuring capture and replay is done with a modern browser. The app also includes a recent Flash plugin to allow for capture and replay of any Flash content. (The App Settings screen includes versions of all components).
+
+
+### Local Storage of All Data
+
+All Webrecorder Data is stored in the `<Documents>/Webrecorder-Data` directory, with actual WARC files under the storage subdirectory. The Autopilot behaviors are placed in the ‘behaviors’ subdirectory. The directory layout may be updated in the future as we work towards a more standardized directory format for web archives. 
+
+
+### Capture, Replay & Curation
+
+The app includes capture, replay, patching as well as curation and collection management features, same as those found on https://webrecorder.io. Existing collections can also be imported (as WARC files) and exported collections can be uploaded to https://webrecorder.io if desired.
+
+
+### Autopilot
+
+The desktop app includes the full [Autopilot](https://guide.webrecorder.io/autopilot) capabilities for capture of certain dynamic websites, introduced with our last release. Unlike a regular browser, Webrecorder Desktop can run Autopilot in the background and be minimized without affecting the quality of Autopilot capture. For example, users can start Autopilot and have it run in the background while doing other work. (There is an option to mute audio in the Options menu for this use case). There is no limit to how long Autopilot can run locally, and only limits are available network bandwidth and disk storage! 
+
+
+### Preview Mode (Beta)
+
+The desktop app includes a new *Preview* mode that allows browsing content without capture. In particular, this can be used to preview a page before capturing it but also to log in to any sites that require login without capturing the login itself. After logging in, users can then switch to capture mode, beginning capture from after the login has completed.  This workflow is recommended for capturing any sites that require a login. To reset all logins, there is also a “Clear Cookies” option in the Options menu. (This feature is currently in beta and we welcome any feedback on this!)
+
+
+### Mobile Device Emulation Mode (Experimental)
+The desktop app also includes an experimental mobile device emulation mode, toggleable from the Options menu. With this mode, Webrecorder Desktop will act as a mobile browser and allow for capturing of mobile only content. The window can be resized as needed to support any mobile device. (This feature is currently in beta and we welcome any feedback on this!)
+
+
+### DAT Protocol Support (Experimental/Advanced)
+
+The app includes our [previously-announced approach to sharing web archive collections](https://blog.webrecorder.io/2018/08/02/webrecorder-dat-integration.html) via the [Dat peer-to-peer protocol](https://dat.foundation/). To enable sharing of a collection, select `Share via Dat` from the collection menu.
+The collection will then have a unique `dat://` url, which will allow the full collection (and future updates) to be synched using various tools that use the [Dat protocol](https://awesome.datproject.org/#using-dat), to allow for automated backup of local collections, if desired. There is not (yet) a way to import existing collections via Dat, but import is planned for a future update.
+
 
 ## Full Local Build
 
-Follow instructions below to build Webrecorder Desktop. More info coming soon!
+To build Webrecorder Desktop locally, please follow the instructions:
 
 1) Clone with submodules (the submodule is the main [webrecorder/webrecorder](https://github.com/webrecorder), which contains most of the code)
 

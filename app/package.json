@@ -1,8 +1,8 @@
 {
   "name": "webrecorder",
   "productName": "Webrecorder",
-  "version": "1.7.0-beta.4",
-  "description": "Webrecorder Desktop -- Standalone Web Archive System",
+  "version": "2.0.0",
+  "description": "Standalone Webrecorder Desktop App",
   "main": "main.js",
   "dependencies": {
     "dat-node": "^3.5.15",
