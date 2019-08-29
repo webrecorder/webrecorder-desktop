@@ -17,6 +17,8 @@ let proxyConfig = {};
 
 let browserState = null;
 
+let desktopUA, mobileUA;
+
 const projectDir = path.join(__dirname, '../');
 const webrecorderBin = path.join(projectDir, 'python-binaries', 'webrecorder');
 const stdio = ['ignore', 'pipe', 'pipe'];
@@ -332,15 +334,8 @@ app.on('ready', async () => {
 
     proxyConfig = { proxyRules: `localhost:${port}` };
   } catch (e) {
-    console.log(`Error launching python app, exiting: ${e}`);
-    const detail = `Sorry, there was an error launching the Webrecorder Python App and Webrecorder Desktop
-must exit.
 
-Please try again or contact us at support@webrecorder.io if the error persists.
-
-Details:
-${e}
-`;
+    const detail = getPythonAppErrorDetail(e);
 
     dialog.showMessageBoxSync({'type': 'error', 'detail': detail});
     app.exit(127);
@@ -348,6 +343,17 @@ ${e}
 
   const seshReplay = getSession(true);
   const seshLiveRecord = getSession(false);
+
+  // set ua
+  const ua = session.defaultSession.getUserAgent();
+  desktopUA = ua.replace(/ Electron[^\s]+/, '');
+
+  mobileUA = ua
+    .replace(/\([^)]+\)/, "(Linux; Android 5.0; SM-G900P Build/LRX21T)")
+    .replace(/Electron[^\s]+/, 'Mobile');
+
+  seshReplay.setUserAgent(desktopUA);
+  seshLiveRecord.setUserAgent(desktopUA);
 
   // verify the self-signed cert
   const certVerify = (request, callback) => callback(0);
@@ -445,17 +451,7 @@ class BrowserState {
       return;
     }
 
-    let ua = null;
-
-    if (mobile) {
-      ua = this.contents.getUserAgent()
-      .replace(/\([^)]+\)/, "(Linux; Android 5.0; SM-G900P Build/LRX21T)")
-      .replace(/Electron[^\s]+/, 'Mobile');
-    } else {
-      ua = session.defaultSession.getUserAgent();
-    }
-
-    this.contents.setUserAgent(ua);
+    this.contents.setUserAgent(mobile ? mobileUA : desktopUA);
 
     const db = this.contents.debugger;
 
@@ -506,3 +502,14 @@ class BrowserState {
   }
 }
 
+function getPythonAppErrorDetail(e) {
+    console.log(`Error launching python app, exiting: ${e}`);
+    return `Sorry, there was an error launching the Webrecorder Python App and Webrecorder Desktop
+must exit.
+
+Please try again or contact us at support@webrecorder.io if the error persists.
+
+Details:
+${e}`;
+
+}
