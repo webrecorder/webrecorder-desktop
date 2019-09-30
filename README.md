@@ -3,7 +3,7 @@
 The Webrecorder Desktop App is a complete packaging of [Webrecorder](https://github.com/webrecorder/webrecorder) hosted service as an Electron application, with an integrated Chromium browser.
 
 It includes the same functionality available on Webrecorder.io running as a local app, including the
-new [Autopilot](https://blog.webrecorder.io/2019/08/07/autopilot.html) feature.
+new [Autopilot](https://blog.webrecorder.io/2019/08/14/autopilot.html) feature.
 
 All data captured is stored in a local directory on your machine, in `Webrecorder-Data` in your Documents directory.
 
