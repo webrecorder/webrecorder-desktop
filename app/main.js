@@ -27,8 +27,7 @@ const pluginDir = 'plugins';
 
 const dataPath = path.join(app.getPath('documents'), 'Webrecorder-Data');
 
-const username = os.userInfo().username;
-
+let username = os.userInfo().username;
 
 switch (process.platform) {
   case 'win32':
@@ -83,12 +82,24 @@ function findPort(rawBuff) {
     return;
   }
 
-  const parts = buff.split('APP_HOST=http://localhost:');
-  if (parts.length !== 2) {
-    return;
+  function findProp(prop) {
+    const parts = buff.split(prop);
+    if (parts.length < 2) {
+      return null;
+    }
+    return parts[1].trim();
   }
 
-  const port = parts[1].trim();
+  const newUsername = findProp('DEFAULT_USER=');
+  if (newUsername) {
+    username = newUsername;
+  }
+
+  const port = findProp('APP_HOST=http://localhost:');
+
+  if (!port) {
+    return;
+  }
 
   if (process.platform !== 'win32') {
     webrecorderProcess.unref();
@@ -488,7 +499,11 @@ class BrowserState {
   clearCache(isReplay = false) {
     // get current session
     const sesh = getSession(isReplay);
-    return sesh.clearCache();
+    return sesh.clearCache().then(() => {
+
+      // also clear serviceworkers, as they may be dependent on the cache
+      sesh.clearStorageData({'storages': ['serviceworkers']});
+    });
   }
 
   toggleDevTools() {
