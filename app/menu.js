@@ -342,6 +342,7 @@ module.exports = class MenuBuilder {
             label: 'Clear Cache',
             click: () => {
               this.state.clearCache();
+              this.state.clearCache(true);
             }
           },
           { type: 'separator' },

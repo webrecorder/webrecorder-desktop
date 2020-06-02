@@ -366,6 +366,8 @@ app.on('ready', async () => {
   seshReplay.setUserAgent(desktopUA);
   seshLiveRecord.setUserAgent(desktopUA);
 
+  app.userAgentFallback = desktopUA;
+
   // verify the self-signed cert
   const certVerify = (request, callback) => callback(0);
 
