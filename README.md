@@ -11,7 +11,7 @@ Webrecorder Desktop can be downloaded below or from [Releases](https://github.co
 
 | OS X | Windows (64-bit) | Windows (32-bit) | Linux |
 | --- | --- | --- | --- |
-| [.dmg](https://github.com/webrecorder/webrecorder-desktop/releases/download/v2.0.1/webrecorder-2.0.1.dmg) | [.exe (64-bit)](https://github.com/webrecorder/webrecorder-desktop/releases/download/v2.0.1/webrecorder-win-x86_64-2.0.1.exe) | [.exe (32-bit)](https://github.com/webrecorder/webrecorder-desktop/releases/download/v2.0.1/webrecorder-win-x86-2.0.1.exe) | [.AppImage](https://github.com/webrecorder/webrecorder-desktop/releases/download/v2.0.1/webrecorder-2.0.1.AppImage) |
+| [.dmg](https://github.com/webrecorder/webrecorder-desktop/releases/download/v2.0.2/webrecorder-2.0.2.dmg) | [.exe (64-bit)](https://github.com/webrecorder/webrecorder-desktop/releases/download/v2.0.2/webrecorder-win-x86_64-2.0.2.exe) | [.exe (32-bit)](https://github.com/webrecorder/webrecorder-desktop/releases/download/v2.0.2/webrecorder-win-x86-2.0.2.exe) | [.AppImage](https://github.com/webrecorder/webrecorder-desktop/releases/download/v2.0.2/webrecorder-2.0.2.AppImage) |
 
 *Note: Running on Linux requires installation of Redis, available as a package on most distros.
 OS X and Windows versions come with a bundled version of Redis.*
