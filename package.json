@@ -1,6 +1,6 @@
 {
   "name": "webrecorder",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "Standalone Webrecorder Desktop App",
   "scripts": {
     "build": "node build-desktop.js",
@@ -101,7 +101,7 @@
   },
   "dependencies": {
     "dat-share": "https://github.com/webrecorder/dat-share.git",
-    "electron": "9.0.3",
+    "electron": "^8.5.3",
     "electron-debug": "^2.2.0",
     "electron-devtools-installer": "^2.2.4",
     "electron-publisher-s3": "^20.17.2",

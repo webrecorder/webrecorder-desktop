@@ -58,6 +58,7 @@ app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 app.commandLine.appendSwitch('remote-debugging-port', 9227);
 
+
 function addToDebugOutput(rawBuff) {
   const buff = rawBuff.toString();
   console.log(buff);
@@ -140,6 +141,7 @@ function createWindow() {
       webviewTag: true,
       nodeIntegration: true,
       backgroundThrottling: false,
+      enableRemoteModule: true
     },
 
     // start with state from windowStateKeeper
