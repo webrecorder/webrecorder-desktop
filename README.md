@@ -1,3 +1,13 @@
+**Deprecated** The Webrecorder Desktop App is now replaced by the [ArchiveWeb.page](https://archiveweb.page) system, available as an Electron App and Chrome Extension.
+
+The new [Electron app](https://github.com/webrecorder/archiveweb.page/releases) is close to supporting all features of Webrecorder Desktop, and should work much better on latest Windows and OS X.
+
+The [Chrome extension](https://chrome.google.com/webstore/detail/webrecorder-archivewebpag/fpeoodllldobpkbkabpblcfaogecpndd) version is compatible with all Chromium-based browsers, and allowing recording and replay directly in the browser.
+
+Development for ArchiveWeb.page continues at: [https://github.com/webrecorder/archiveweb.page](https://github.com/webrecorder/archiveweb.page).
+
+<hr>
+
 # Webrecorder Desktop App
 
 The Webrecorder Desktop App is a complete packaging of [Webrecorder](https://github.com/webrecorder/webrecorder) hosted service as an Electron application, with an integrated Chromium browser.
